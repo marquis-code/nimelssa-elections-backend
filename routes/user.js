@@ -6,6 +6,8 @@ const { getUserByEmail, createUser, User, getUsers, approveMatric, disapproveMat
 
 const router = express.Router();
 
+const allowedMatricNumbers = ["190708015", "180708004", "160708004"];
+
 router.post('/register', async (req, res, next) => {
   try {
     const { firstname, lastname, email, matric, password, level, role } = req.body;
@@ -141,6 +143,62 @@ router.put('/users/:id/disapprove-matric', async (req, res) => {
     res.status(200).json({successMessage : 'User Matric had been disapproved successfully'});
   } catch (error) {
     res.status(500).json({errorMessage : 'Something went wrong, Please try again.'});
+  }
+});
+
+router.post('/admin-login', async (req, res, next) => {
+  try {
+    const { matric, password } = req.body;
+
+    if (!matric || !password) {
+      return res.status(400).json({ errorMessage: 'Incomplete request data' });
+    }
+
+    if (!allowedMatricNumbers.includes(matric)) {
+      return res.status(403).json({ message: 'Access denied. Matric number not allowed.' });
+    }
+
+    const user = await User.findOne({ matric }).populate('authentication');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (!user.isMatricApproved) {
+      return res.status(404).json({ message: 'Matric Number not approved. Contact Academic team to get your matric approved.' });
+    }
+
+    const { authentication } = user;
+    const passwordMatch = await bcrypt.compare(password, authentication.password);
+
+    if (!passwordMatch) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    const maxAge = 3 * 24 * 60 * 60;
+    const payload = {
+      id: user._id,
+      role: user.role
+    };
+
+    const accessToken = jwt.sign(payload, process.env.JWT_SECRET, {
+      expiresIn: maxAge
+    });
+
+    user.authentication.sessionToken = accessToken;
+    await user.save();
+
+    res.cookie('ELECTION_AUTH_TOKEN', accessToken, {
+      path: '/',
+      maxAge: maxAge * 1000,
+      httpOnly: true,
+      sameSite: 'strict',
+      secure: process.env.NODE_ENV !== 'development'
+    });
+
+    return res.status(200).json({ user, token: accessToken });
+  } catch (error) {
+    console.log(error, 'error here');
+    return res.status(500).json({ errorMessage: 'Something went wrong' });
   }
 });
 
