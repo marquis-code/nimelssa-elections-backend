@@ -2,7 +2,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { getUserByEmail, createUser, User } = require('../model/user');
+const { getUserByEmail, createUser, User, getUsers, approveMatric, disapproveMatric } = require('../model/user');
 
 const router = express.Router();
 
@@ -104,5 +104,45 @@ router.post('/logout', (req, res) => {
 
   return res.status(200).json({ message: 'Successfully logged out' });
 });
+
+router.get('/users', async (req, res) => {
+  try {
+    const users = await getUsers()
+    res.status(200).json(users)
+} catch (error) {
+    res.status(500).json({errorMessage: 'Something went wrong'})
+}
+});
+
+router.put('/users/:id/approve-matric', async (req, res) => {
+  const _id = req.params.id
+  try {
+    const user = await User.findOne({_id});
+    if (!user) {
+     return res.status(400).json({ errorMessage: 'User does not exist' });
+    }
+    user.isMatricApproved = true;
+    await user.save()
+    res.status(200).json({successMessage : 'User Matric had been approved successfully'});
+  } catch (error) {
+    res.status(500).json({errorMessage : 'Something went wrong, Please try again.'});
+  }
+});
+
+router.put('/users/:id/disapprove-matric', async (req, res) => {
+  const _id = req.params.id
+  try {
+    const user = await User.findOne({_id});
+    if (!user) {
+     return res.status(400).json({ errorMessage: 'User does not exist' });
+    }
+    user.isMatricApproved = false;
+    await user.save()
+    res.status(200).json({successMessage : 'User Matric had been disapproved successfully'});
+  } catch (error) {
+    res.status(500).json({errorMessage : 'Something went wrong, Please try again.'});
+  }
+});
+
 
 module.exports = router;
