@@ -2,7 +2,8 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { getUserByEmail, createUser, User, getUsers, approveMatric, disapproveMatric } = require('../model/user');
+const authenticateToken = require('../middlewares/admin');
+const { getUserByEmail, createUser, User, getUsers } = require('../model/user');
 
 const router = express.Router();
 
@@ -116,22 +117,39 @@ router.get('/users', async (req, res) => {
 }
 });
 
-router.put('/users/:id/approve-matric', async (req, res) => {
-  const _id = req.params.id
+// router.put('/users/:id/approve-matric', async (req, res) => {
+//   const _id = req.params.id
+//   try {
+//     const user = await User.findOne({_id});
+//     if (!user) {
+//      return res.status(400).json({ errorMessage: 'User does not exist' });
+//     }
+//     user.isMatricApproved = true;
+//     await user.save()
+//     res.status(200).json({successMessage : 'User Matric had been approved successfully'});
+//   } catch (error) {
+//     res.status(500).json({errorMessage : 'Something went wrong, Please try again.'});
+//   }
+// });
+
+
+router.put('/users/:id/approve-matric', authenticateToken, async (req, res) => {
+  const _id = req.params.id;
+
   try {
-    const user = await User.findOne({_id});
+    const user = await User.findOne({ _id });
     if (!user) {
-     return res.status(400).json({ errorMessage: 'User does not exist' });
+      return res.status(400).json({ errorMessage: 'User does not exist' });
     }
     user.isMatricApproved = true;
-    await user.save()
-    res.status(200).json({successMessage : 'User Matric had been approved successfully'});
+    await user.save();
+    res.status(200).json({ successMessage: 'User Matric has been approved successfully' });
   } catch (error) {
-    res.status(500).json({errorMessage : 'Something went wrong, Please try again.'});
+    res.status(500).json({ errorMessage: 'Something went wrong. Please try again.' });
   }
 });
 
-router.put('/users/:id/disapprove-matric', async (req, res) => {
+router.put('/users/:id/disapprove-matric', authenticateToken, async (req, res) => {
   const _id = req.params.id
   try {
     const user = await User.findOne({_id});
