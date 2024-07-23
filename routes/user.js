@@ -5,6 +5,12 @@ const jwt = require('jsonwebtoken');
 const authenticateToken = require('../middlewares/admin');
 const { getUserByEmail, createUser, User, getUsers } = require('../model/user');
 
+// Function to generate a 4-digit OTP
+const generateOTP = () => {
+  return Math.floor(1000 + Math.random() * 9000).toString();
+};
+
+
 const router = express.Router();
 
 const allowedMatricNumbers = ["190708015", "180708004", "160708004"];
@@ -99,6 +105,62 @@ router.post('/login', async (req, res, next) => {
   }
 });
 
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { matric } = req.body;
+
+    if (!matric) {
+      return res.status(400).json({ errorMessage: 'Matric number is required' });
+    }
+
+    const user = await User.findOne({ matric });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const otp = generateOTP();
+    user.resetPasswordOTP = otp;
+    user.resetPasswordExpires = Date.now() + 3600000; // OTP expires in 1 hour
+    await user.save();
+
+    return res.status(200).json({ otp, message: '4 digit OTP has been sent. Use the OTP to reset your password.' });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ errorMessage: 'Something went wrong' });
+  }
+});
+
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { matric, otp, newPassword } = req.body;
+
+    if (!matric || !otp || !newPassword) {
+      return res.status(400).json({ errorMessage: 'Incomplete request data' });
+    }
+
+    const user = await User.findOne({ matric });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (user.resetPasswordOTP !== otp || user.resetPasswordExpires < Date.now()) {
+      return res.status(400).json({ message: 'Invalid or expired OTP' });
+    }
+
+    // Reset the password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.authentication.password = hashedPassword;
+    user.resetPasswordOTP = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    return res.status(200).json({ message: 'Password reset successfully' });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ errorMessage: 'Something went wrong' });
+  }
+});
+
 router.post('/logout', (req, res) => {
   res.cookie('QUIZ_AUTH_TOKEN', '', {
     httpOnly: true,
@@ -116,22 +178,6 @@ router.get('/users', async (req, res) => {
     res.status(500).json({errorMessage: 'Something went wrong'})
 }
 });
-
-// router.put('/users/:id/approve-matric', async (req, res) => {
-//   const _id = req.params.id
-//   try {
-//     const user = await User.findOne({_id});
-//     if (!user) {
-//      return res.status(400).json({ errorMessage: 'User does not exist' });
-//     }
-//     user.isMatricApproved = true;
-//     await user.save()
-//     res.status(200).json({successMessage : 'User Matric had been approved successfully'});
-//   } catch (error) {
-//     res.status(500).json({errorMessage : 'Something went wrong, Please try again.'});
-//   }
-// });
-
 
 router.put('/users/:id/approve-matric', authenticateToken, async (req, res) => {
   const _id = req.params.id;

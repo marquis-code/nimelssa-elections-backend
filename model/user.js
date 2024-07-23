@@ -49,7 +49,9 @@ const UserSchema = new mongoose.Schema({
             type: String,
             select: true
         }
-    }
+    },
+    resetPasswordOTP: { type: String },
+    resetPasswordExpires: { type: Date }
 });
 
 const User = mongoose.model("User", UserSchema);
