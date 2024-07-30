@@ -1,5 +1,6 @@
 const express = require("express");
 const app = express();
+const bodyParser = require('body-parser');
 const morgan = require("morgan");
 const helment = require("helmet");
 const cors = require("cors");
@@ -11,6 +12,9 @@ const port = process.env.PORT || 3000;
 const connectDB = require("./config/db.config");
 
 connectDB();
+
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
 const corsOptions = {
   credentials: true,
@@ -25,9 +29,11 @@ app.use(express.urlencoded({ extended: true }));
 
 const userRouter = require("./routes/user");
 const electionRouter = require("./routes/election");
+const candidateRouter = require("./routes/candidate");
 
 app.use("/api/auth", userRouter);
 app.use("/api/election", electionRouter);
+app.use("/api/candidate", candidateRouter);
 
 app.listen(port, () => {
   console.log(`Listening at http://localhost:${port}`);

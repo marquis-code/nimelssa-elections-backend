@@ -224,11 +224,7 @@ router.post('/admin-login', async (req, res, next) => {
 
     const user = await User.findOne({ matric }).populate('authentication');
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    if (!user.isMatricApproved) {
-      return res.status(404).json({ message: 'Matric Number not approved. Contact Academic team to get your matric approved.' });
+      return res.status(404).json({ message: 'Admin not found' });
     }
 
     const { authentication } = user;
@@ -238,7 +234,7 @@ router.post('/admin-login', async (req, res, next) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    const maxAge = 3 * 24 * 60 * 60;
+    const maxAge = 3 * 24 * 60 * 60; // 3 days
     const payload = {
       id: user._id,
       role: user.role
@@ -250,14 +246,6 @@ router.post('/admin-login', async (req, res, next) => {
 
     user.authentication.sessionToken = accessToken;
     await user.save();
-
-    res.cookie('ELECTION_AUTH_TOKEN', accessToken, {
-      path: '/',
-      maxAge: maxAge * 1000,
-      httpOnly: true,
-      sameSite: 'strict',
-      secure: process.env.NODE_ENV !== 'development'
-    });
 
     return res.status(200).json({ user, token: accessToken });
   } catch (error) {
