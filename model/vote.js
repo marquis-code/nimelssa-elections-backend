@@ -2,6 +2,10 @@ const mongoose = require('mongoose');
 
 const voteSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  deviceId: {
+    type: String,
+    required: [true, "DeviceId is required"]
+},
   president: { type: mongoose.Schema.Types.ObjectId, ref: 'Candidate', required: false },
   vice_president: { type: mongoose.Schema.Types.ObjectId, ref: 'Candidate', required: false },
   academic_secretary: { type: mongoose.Schema.Types.ObjectId, ref: 'Candidate', required: false },
