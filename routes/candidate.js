@@ -15,8 +15,7 @@ const allowedPositions = [
 ];
 
 // Create a candidate
-router.post('/create', adminAuthenticateToken, upload.single('image'), async (req, res) => {
-  console.log(req.body, 'here ')
+router.post('/create', upload.single('image'), async (req, res) => {
   const { name, position, level, quote } = req.body;
 
   if (!name) {

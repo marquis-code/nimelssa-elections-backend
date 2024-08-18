@@ -11,11 +11,9 @@ const adminAuthenticateToken = async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log(decoded, 'deoded here')
     req.user = decoded;
 
     const user = await getUserById(req.user.id);
-    console.log(user, 'user here')
     if (!user) {
       return res.status(403).json({ errorMessage: 'Access denied. User not found.' });
     }
@@ -27,7 +25,6 @@ const adminAuthenticateToken = async (req, res, next) => {
 
     next();
   } catch (error) {
-    console.log(error, 'error here')
     res.status(400).json({ errorMessage: 'Invalid token.' });
   }
 };

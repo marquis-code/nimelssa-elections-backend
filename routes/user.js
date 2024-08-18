@@ -48,7 +48,6 @@ router.post('/register', async (req, res, next) => {
 
     return res.status(200).json({ successMessage: 'User was successfully created', user: newUser });
   } catch (error) {
-    console.error(error, 'error here');
     return res.status(500).json({ errorMessage: 'Something went wrong' });
   }
 });
@@ -100,7 +99,6 @@ router.post('/login', async (req, res, next) => {
 
     return res.status(200).json({ user, token: accessToken });
   } catch (error) {
-    console.log(error, 'error here')
     return res.status(500).json({ errorMessage: 'Something went wrong' });
   }
 });
@@ -125,7 +123,6 @@ router.post('/forgot-password', async (req, res) => {
 
     return res.status(200).json({ otp, message: '4 digit OTP has been sent. Use the OTP to reset your password.' });
   } catch (error) {
-    console.error(error);
     return res.status(500).json({ errorMessage: 'Something went wrong' });
   }
 });
@@ -156,7 +153,6 @@ router.post('/reset-password', async (req, res) => {
 
     return res.status(200).json({ message: 'Password reset successfully' });
   } catch (error) {
-    console.error(error);
     return res.status(500).json({ errorMessage: 'Something went wrong' });
   }
 });
@@ -249,7 +245,6 @@ router.post('/admin-login', async (req, res, next) => {
 
     return res.status(200).json({ user, token: accessToken });
   } catch (error) {
-    console.log(error, 'error here');
     return res.status(500).json({ errorMessage: 'Something went wrong' });
   }
 });
