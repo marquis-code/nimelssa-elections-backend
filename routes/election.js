@@ -8,7 +8,130 @@ const adminAuthenticateToken = require('../middlewares/adminAuth');
 
 const router = express.Router();
 
-// Endpoint to submit a vote
+// // Endpoint to submit a vote
+// router.post('/submitVote', userAuthenticateToken, async (req, res) => {
+//   const { votes, deviceId } = req.body;
+
+//   try {
+//     // Check if the user or the device has already voted
+//     const existingVote = await Vote.findOne({ $or: [{ userId: req.user.id }, { deviceId }] });
+//     if (existingVote) {
+//       return res.status(400).json({ error: 'You have already voted from this account or device' });
+//     }
+
+//     // Validate each candidate in the votes object
+//     const voteKeys = Object.keys(votes);
+//     for (let i = 0; i < voteKeys.length; i++) {
+//       const position = voteKeys[i];
+//       const candidateIds = Array.isArray(votes[position]) ? votes[position] : [votes[position]];
+
+//       for (let j = 0; j < candidateIds.length; j++) {
+//         const candidateId = candidateIds[j];
+//         if (!candidateId) continue; // Skip if no candidate is selected (i.e., withholding vote)
+
+//         const candidateExists = await Candidate.exists({ _id: new mongoose.Types.ObjectId(candidateId) });
+//         if (!candidateExists) {
+//           return res.status(400).json({ error: `Invalid candidate selected for ${position}: ${candidateId}` });
+//         }
+//       }
+//     }
+
+//     // Create the new vote
+//     const newVote = new Vote({
+//       userId: req.user.id, // Assuming req.user is populated by userAuthenticateToken middleware
+//       ...votes,
+//       deviceId,
+//     });
+
+//     await newVote.save();
+//     return res.status(201).json({ message: 'Thanks for voting. Your vote was submitted successfully.' });
+//   } catch (err) {// Log the full error for debugging
+//     console.log(err)
+//     return res.status(400).json({ error: 'Error submitting vote', details: err.message || err });
+//   }
+// });
+
+// router.post('/submitVote', userAuthenticateToken, async (req, res) => {
+//   const { votes, deviceId } = req.body;
+//   console.log(req.body); // Debugging: ensure that req.body contains the expected payload
+
+//   try {
+//     // Check if the user or the device has already voted
+//     const existingVote = await Vote.findOne({ $or: [{ userId: req.user.id }, { deviceId }] });
+//     if (existingVote) {
+//       return res.status(400).json({ error: 'You have already voted from this account or device' });
+//     }
+
+//     // Check if votes object is valid
+//     if (!votes || typeof votes !== 'object') {
+//       return res.status(400).json({ error: 'Invalid votes data' });
+//     }
+
+//     // Validate each candidate in the votes object
+//     const voteKeys = Object.keys(votes);
+//     for (let i = 0; i < voteKeys.length; i++) {
+//       const position = voteKeys[i];
+//       const candidateIds = Array.isArray(votes[position]) ? votes[position] : [votes[position]];
+
+//       // Skip validation if the user chose to withhold the vote (i.e., empty string or empty array)
+//       if (!votes[position] || candidateIds.length === 0) continue;
+
+//       for (let j = 0; j < candidateIds.length; j++) {
+//         const candidateId = candidateIds[j];
+//         if (!candidateId) continue; // Skip if no candidate is selected
+
+//         const candidateExists = await Candidate.exists({ _id: new mongoose.Types.ObjectId(candidateId) });
+//         if (!candidateExists) {
+//           return res.status(400).json({ error: `Invalid candidate selected for ${position}: ${candidateId}` });
+//         }
+//       }
+//     }
+
+//     // Create the new vote
+//     const newVote = new Vote({
+//       userId: req.user.id, // Assuming req.user is populated by userAuthenticateToken middleware
+//       ...votes,
+//       deviceId,
+//     });
+
+//     await newVote.save();
+//     return res.status(201).json({ message: 'Thanks for voting. Your vote was submitted successfully.' });
+//   } catch (err) {
+//     // Log the full error for debugging
+//     console.log(err);
+//     return res.status(400).json({ error: 'Error submitting vote', details: err.message || err });
+//   }
+// });
+
+// router.post('/submitVote', userAuthenticateToken, async (req, res) => {
+//   const { votes, deviceId } = req.body;
+
+//   try {
+//     const existingVote = await Vote.findOne({ $or: [{ userId: req.user.id }, { deviceId }] });
+//     if (existingVote) return res.status(400).json({ error: 'You have already voted from this account or device' });
+
+//     if (!votes || typeof votes !== 'object') return res.status(400).json({ error: 'Invalid votes data' });
+
+//     for (const [position, candidateIds] of Object.entries(votes)) {
+//       if (!candidateIds || candidateIds.length === 0) continue;
+
+//       const candidates = Array.isArray(candidateIds) ? candidateIds : [candidateIds];
+//       for (const candidateId of candidates) {
+//         if (!candidateId) continue;
+
+//         const candidateExists = await Candidate.exists({ _id: new mongoose.Types.ObjectId(candidateId) });
+//         if (!candidateExists) return res.status(400).json({ error: `Invalid candidate selected for ${position}: ${candidateId}` });
+//       }
+//     }
+
+//     await new Vote({ userId: req.user.id, ...votes, deviceId }).save();
+//     res.status(201).json({ message: 'Thanks for voting. Your vote was submitted successfully.' });
+//   } catch (err) {
+//     console.log(err);
+//     res.status(400).json({ error: 'Error submitting vote', details: err.message || err });
+//   }
+// });
+
 router.post('/submitVote', userAuthenticateToken, async (req, res) => {
   const { votes, deviceId } = req.body;
 
@@ -19,36 +142,49 @@ router.post('/submitVote', userAuthenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'You have already voted from this account or device' });
     }
 
-    // Validate each candidate in the votes object
-    const voteKeys = Object.keys(votes);
-    for (let i = 0; i < voteKeys.length; i++) {
-      const position = voteKeys[i];
-      const candidateIds = Array.isArray(votes[position]) ? votes[position] : [votes[position]];
+    if (!votes || typeof votes !== 'object') {
+      return res.status(400).json({ error: 'Invalid votes data' });
+    }
 
-      for (let j = 0; j < candidateIds.length; j++) {
-        const candidateId = candidateIds[j];
-        if (!candidateId) continue; // Skip if no candidate is selected (i.e., withholding vote)
+    const filteredVotes = {};
+    for (const [position, candidateIds] of Object.entries(votes)) {
+      if (!candidateIds || (Array.isArray(candidateIds) && candidateIds.length === 0)) {
+        continue; // Skip empty arrays (withheld vote)
+      }
 
-        const candidateExists = await Candidate.exists({ _id: new mongoose.Types.ObjectId(candidateId) });
+      if (typeof candidateIds === 'string' && candidateIds === "") {
+        continue; // Skip empty strings (withheld vote)
+      }
+
+      const candidates = Array.isArray(candidateIds) ? candidateIds : [candidateIds];
+      for (const candidateId of candidates) {
+        if (!candidateId) continue; // Skip invalid candidate IDs
+
+        const candidateExists = await Candidate.exists({ _id: candidateId });
         if (!candidateExists) {
           return res.status(400).json({ error: `Invalid candidate selected for ${position}: ${candidateId}` });
         }
       }
+
+      // Assign valid candidate IDs to the filteredVotes object
+      filteredVotes[position] = candidateIds;
     }
 
-    // Create the new vote
+    // Create the new vote document with filtered votes
     const newVote = new Vote({
       userId: req.user.id, // Assuming req.user is populated by userAuthenticateToken middleware
-      ...votes,
+      ...filteredVotes,
       deviceId,
     });
 
     await newVote.save();
     return res.status(201).json({ message: 'Thanks for voting. Your vote was submitted successfully.' });
-  } catch (err) {// Log the full error for debugging
+  } catch (err) {
+    console.log(err);
     return res.status(400).json({ error: 'Error submitting vote', details: err.message || err });
   }
 });
+
 
 router.get('/election-results', adminAuthenticateToken, async (req, res) => {
   try {
