@@ -14,7 +14,7 @@ const generateOTP = () => {
 
 const router = express.Router();
 
-const allowedMatricNumbers = ["190708015", "180708004", "160708004"];
+const allowedMatricNumbers = ["190708015", "180708004", "160708004", "230708544", "210708040", "190704023"];
 
 router.post('/register', async (req, res, next) => {
   try {
@@ -229,6 +229,11 @@ router.post('/admin-login', async (req, res, next) => {
     }
 
     const user = await User.findOne({ matric }).populate('authentication');
+
+    if (user && user.role !== 'admin') {
+      return res.status(404).json({ message: 'You Need to be an Admin to login' });
+    }
+
     if (!user) {
       return res.status(404).json({ message: 'Admin not found' });
     }
