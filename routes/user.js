@@ -3,6 +3,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const authenticateToken = require('../middlewares/admin');
+const adminAuthenticateToken = require('../middlewares/adminAuth')
 const { getUserByEmail, createUser, User, getUsers } = require('../model/user');
 
 // Function to generate a 4-digit OTP
@@ -175,7 +176,7 @@ router.get('/users', async (req, res) => {
 }
 });
 
-router.put('/users/:id/approve-matric', authenticateToken, async (req, res) => {
+router.put('/users/:id/approve-matric', adminAuthenticateToken, async (req, res) => {
   const _id = req.params.id;
 
   try {
@@ -191,7 +192,7 @@ router.put('/users/:id/approve-matric', authenticateToken, async (req, res) => {
   }
 });
 
-router.put('/users/:id/disapprove-matric', authenticateToken, async (req, res) => {
+router.put('/users/:id/disapprove-matric', adminAuthenticateToken, async (req, res) => {
   const _id = req.params.id
   try {
     const user = await User.findOne({_id});

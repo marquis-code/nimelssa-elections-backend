@@ -18,8 +18,8 @@ const userAuthenticateToken = async (req, res, next) => {
       return res.status(403).json({ errorMessage: 'Access denied. User not found.' });
     }
 
-    if (user && user.role !== 'user') {
-        return res.status(403).json({ errorMessage: 'Access denied. LoggedIn users Only can access this resource.' });
+    if (user && user.role !== 'user' && !user.isMatricApproved) {
+        return res.status(403).json({ errorMessage: 'Access denied. Only LoggedIn users with approved matric can access this route.' });
       }
   
 

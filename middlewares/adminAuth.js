@@ -18,9 +18,9 @@ const adminAuthenticateToken = async (req, res, next) => {
       return res.status(403).json({ errorMessage: 'Access denied. User not found.' });
     }
 
-    if (user && user.role !== 'admin') {
-        return res.status(403).json({ errorMessage: 'Access denied. Admins Only can access this resource.' });
-      }
+    if (user && user.role !== 'admin' && !user.isMatricApproved) {
+      return res.status(403).json({ errorMessage: 'Access denied. Only admins with matric approval can access this resource.' });
+  }
   
 
     next();
