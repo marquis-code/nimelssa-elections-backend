@@ -234,6 +234,10 @@ router.post('/admin-login', async (req, res, next) => {
       return res.status(404).json({ message: 'You need to be an admin to login' });
     }
 
+    if (user && !user.isMatricApproved) {
+      return res.status(404).json({ message: 'Your matric number needs to be approved to login' });
+    }
+
     if (!user) {
       return res.status(404).json({ message: 'Admin not found' });
     }
