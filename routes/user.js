@@ -270,7 +270,7 @@ router.post('/admin-login', async (req, res, next) => {
          delete userObj.authentication.password;
        }
 
-    return res.status(200).json({ user, token: accessToken });
+       return res.status(200).json({ user: userObj, token: accessToken });
   } catch (error) {
     return res.status(500).json({ errorMessage: 'Something went wrong' });
   }
