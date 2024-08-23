@@ -201,6 +201,97 @@ router.put('/users/:id/approve-matric', adminAuthenticateToken, async (req, res)
   }
 });
 
+router.post('/batch-approve-matric', async (req, res) => {
+  const matricNumbers = req.body.matricNumbers;
+  console.log(matricNumbers, 'matric numbers here')
+
+  if (!Array.isArray(matricNumbers) || matricNumbers.length === 0) {
+    return res.status(400).json({ errorMessage: 'No matric numbers provided or invalid input format' });
+  }
+
+  try {
+    // Find all users matching the provided matric numbers
+    const users = await User.find({ matric: { $in: matricNumbers } });
+
+    // Identify matric numbers not found in the database
+    const foundMatricNumbers = users.map(user => user.matric);
+    const missingMatricNumbers = matricNumbers.filter(matric => !foundMatricNumbers.includes(matric));
+
+    if (missingMatricNumbers.length > 0) {
+      return res.status(400).json({
+        errorMessage: 'Some matric numbers were not found in the database',
+        missingMatricNumbers
+      });
+    }
+
+    // Update the isMatricApproved status for all found users
+    await User.updateMany(
+      { matric: { $in: matricNumbers } },
+      { $set: { isMatricApproved: true } }
+    );
+
+    // Fetch the updated users to return in the response
+    const updatedUsers = await User.find({ matric: { $in: matricNumbers } });
+
+    res.status(200).json({
+      successMessage: 'Matric numbers approved successfully',
+      updatedUsers: updatedUsers.map(user => ({
+        matric: user.matric,
+        isMatricApproved: user.isMatricApproved
+      }))
+    });
+  } catch (error) {
+    console.error(error); // Log the error for debugging purposes
+    res.status(500).json({ errorMessage: 'Something went wrong. Please try again.' });
+  }
+});
+
+router.post('/batch-disapprove-matric', async (req, res) => {
+  const matricNumbers = req.body.matricNumbers;
+  console.log(matricNumbers, 'matric numbers here')
+
+  if (!Array.isArray(matricNumbers) || matricNumbers.length === 0) {
+    return res.status(400).json({ errorMessage: 'No matric numbers provided or invalid input format' });
+  }
+
+  try {
+    // Find all users matching the provided matric numbers
+    const users = await User.find({ matric: { $in: matricNumbers } });
+
+    // Identify matric numbers not found in the database
+    const foundMatricNumbers = users.map(user => user.matric);
+    const missingMatricNumbers = matricNumbers.filter(matric => !foundMatricNumbers.includes(matric));
+
+    if (missingMatricNumbers.length > 0) {
+      return res.status(400).json({
+        errorMessage: 'Some matric numbers were not found in the database',
+        missingMatricNumbers
+      });
+    }
+
+    // Update the isMatricApproved status for all found users
+    await User.updateMany(
+      { matric: { $in: matricNumbers } },
+      { $set: { isMatricApproved: false } }
+    );
+
+    // Fetch the updated users to return in the response
+    const updatedUsers = await User.find({ matric: { $in: matricNumbers } });
+
+    res.status(200).json({
+      successMessage: 'Matric numbers disapproved successfully',
+      updatedUsers: updatedUsers.map(user => ({
+        matric: user.matric,
+        isMatricApproved: user.isMatricApproved
+      }))
+    });
+  } catch (error) {
+    console.error(error); // Log the error for debugging purposes
+    res.status(500).json({ errorMessage: 'Something went wrong. Please try again.' });
+  }
+});
+
+
 router.put('/users/:id/disapprove-matric', adminAuthenticateToken, async (req, res) => {
   const _id = req.params.id
   try {
