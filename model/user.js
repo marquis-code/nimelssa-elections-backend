@@ -11,7 +11,14 @@ const UserSchema = new mongoose.Schema({
     },
     matric: {
         type: String,
-        required: [true, "Please enter a matric"]
+        unique: true,
+        required: [true, "Please enter a matric number"],
+        validate: {
+            validator: function (v) {
+                return v && v.trim().length > 0; // Ensures matric is not empty or null
+            },
+            message: "Matric number cannot be empty"
+        }
     },
     level: {
         type: String,
@@ -25,11 +32,11 @@ const UserSchema = new mongoose.Schema({
     },
     email: {
         type: String,
+        unique: true,
         required: [true, "Please enter an email"],
-        unique: [true, "Email already exists in database!"],
         validate: {
             validator: function (v) {
-                return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+                return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); // Validates email format
             },
             message: '{VALUE} is not a valid email!'
         }
@@ -54,16 +61,77 @@ const UserSchema = new mongoose.Schema({
     resetPasswordExpires: { type: Date }
 });
 
+// Ensure unique index on matric and email
+UserSchema.index({ matric: 1 }, { unique: true });
+UserSchema.index({ email: 1 }, { unique: true });
+
 const User = mongoose.model("User", UserSchema);
 
+// Utility functions
+
 const getUsers = () => User.find();
+
 const getUserByEmail = (email) => User.findOne({ email });
+
 const getUserByMatric = (matric) => User.findOne({ matric });
-const getUserById = (id) => User.findById({ _id: id });
+
+const getUserById = (id) => User.findById(id);
+
 const getUserBySessionToken = (sessionToken) => User.findOne({ 'authentication.sessionToken': sessionToken });
-const createUser = (values) => new User(values).save().then((user) => user.toObject());
-const updateUserById = (id, values) => User.findByIdAndUpdate(id, values);
-const deleteUserById = (id) => User.findOneAndDelete({ _id: id });
+
+const createUser = async (values) => {
+    // Validate required fields before creating a user
+    if (!values.matric || values.matric.trim() === "") {
+        throw new Error("Matric number cannot be null or empty");
+    }
+    if (!values.email || values.email.trim() === "") {
+        throw new Error("Email cannot be null or empty");
+    }
+
+    // Check for existing users with the same matric or email
+    const existingUserByMatric = await User.findOne({ matric: values.matric });
+    if (existingUserByMatric) {
+        throw new Error("Matric number already exists");
+    }
+
+    const existingUserByEmail = await User.findOne({ email: values.email });
+    if (existingUserByEmail) {
+        throw new Error("Email already exists in database!");
+    }
+
+    // Create and save the new user
+    return new User(values).save().then((user) => user.toObject());
+};
+
+const updateUserById = async (id, values) => {
+    // Ensure that matric and email are not empty if they are being updated
+    if (values.matric && values.matric.trim() === "") {
+        throw new Error("Matric number cannot be empty");
+    }
+    if (values.email && values.email.trim() === "") {
+        throw new Error("Email cannot be empty");
+    }
+
+    // Check for unique constraint violations
+    if (values.matric) {
+        const existingUserByMatric = await User.findOne({ matric: values.matric, _id: { $ne: id } });
+        if (existingUserByMatric) {
+            throw new Error("Matric number already exists");
+        }
+    }
+
+    if (values.email) {
+        const existingUserByEmail = await User.findOne({ email: values.email, _id: { $ne: id } });
+        if (existingUserByEmail) {
+            throw new Error("Email already exists in database!");
+        }
+    }
+
+    // Update the user
+    return User.findByIdAndUpdate(id, values, { new: true, runValidators: true }).then((user) => user.toObject());
+};
+
+const deleteUserById = (id) => User.findByIdAndDelete(id);
 
 module.exports = {
     User,

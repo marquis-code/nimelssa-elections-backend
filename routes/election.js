@@ -9,13 +9,14 @@ const adminAuthenticateToken = require('../middlewares/adminAuth');
 const router = express.Router();
 
 router.post('/submitVote', userAuthenticateToken, async (req, res) => {
-  const { votes, deviceId } = req.body;
+  const { votes } = req.body;
 
   try {
-    // Check if the user or the device has already voted
-    const existingVote = await Vote.findOne({ $or: [{ userId: req.user.id }, { deviceId }] });
+    console.log(req.user.id, 'here')
+    // Check if the user has already voted (this is redundant but good to double-check)
+    const existingVote = await Vote.findOne({ userId: req.user.id });
     if (existingVote) {
-      return res.status(400).json({ error: 'You have already voted from this account or device' });
+      return res.status(400).json({ error: 'You have already voted from this account' });
     }
 
     if (!votes || typeof votes !== 'object') {
@@ -49,13 +50,16 @@ router.post('/submitVote', userAuthenticateToken, async (req, res) => {
     // Create the new vote document with filtered votes
     const newVote = new Vote({
       userId: req.user.id, // Assuming req.user is populated by userAuthenticateToken middleware
-      ...filteredVotes,
-      deviceId,
+      ...filteredVotes
     });
 
     await newVote.save();
     return res.status(201).json({ message: 'Thanks for voting. Your vote was submitted successfully.' });
   } catch (err) {
+    if (err.code === 11000) {
+      // Handle duplicate key error (code 11000 is MongoDB's duplicate key error code)
+      return res.status(400).json({ error: 'You have already voted from this account' });
+    }
     console.log(err);
     return res.status(400).json({ error: 'Error submitting vote', details: err.message || err });
   }
@@ -75,7 +79,7 @@ router.get('/election-results', adminAuthenticateToken, async (req, res) => {
     // Initialize the results structure
     votes.forEach(vote => {
       for (const position in vote.toObject()) {
-        if (position !== '_id' && position !== 'userId' && position !== 'deviceId' && position !== 'createdAt') {
+        if (position !== '_id' && position !== 'userId' && position !== 'createdAt') {
           if (!results[position]) {
             results[position] = {};
           }
@@ -153,6 +157,7 @@ router.get('/election-results', adminAuthenticateToken, async (req, res) => {
     return res.status(400).json({ error: 'Error calculating results', details: err });
   }
 });
+
 
 
 module.exports = router;
