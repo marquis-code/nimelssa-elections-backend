@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken');
 const authenticateToken = require('../middlewares/admin');
 const adminAuthenticateToken = require('../middlewares/adminAuth')
 const { getUserByEmail, createUser, User, getUsers } = require('../model/user');
+const mongoose = require('mongoose');
 
 // Function to generate a 4-digit OTP
 const generateOTP = () => {
@@ -366,6 +367,72 @@ router.post('/admin-login', async (req, res, next) => {
     return res.status(500).json({ errorMessage: 'Something went wrong' });
   }
 });
+
+
+// Update a user by ID
+router.patch('/user/:id', adminAuthenticateToken, async (req, res) => {
+  const { id } = req.params;
+
+  // Validate ObjectId
+  if (!mongoose.isValidObjectId(id)) {
+    return res.status(400).json({ errorMessage: "Invalid user ID" });
+  }
+
+  const { firstname, lastname, email, matric, level } = req.body;
+
+  // Validate required fields
+  if (!firstname || !lastname || !email || !matric || !level) {
+    return res.status(400).json({ errorMessage: 'Incomplete request data' });
+  }
+
+  try {
+    // Update the user in a single call
+    const user = await User.findByIdAndUpdate(
+      id,
+      { firstname, lastname, email, matric, level },
+      {
+        new: true,          // Return the updated user
+        runValidators: true, // Run schema validators
+      }
+    );
+
+    if (!user) {
+      return res.status(404).json({ errorMessage: 'User not found' });
+    }
+
+    res.status(200).json(user);
+  } catch (error) {
+    // Log error and send a more generic error message
+    console.error(error);
+    res.status(500).json({ errorMessage: 'Internal Server Error' });
+  }
+});
+
+
+// Delete a user by ID
+router.delete('/user/:id', adminAuthenticateToken, async (req, res) => {
+  const { id } = req.params;
+
+  // Validate ObjectId
+  if (!mongoose.isValidObjectId(id)) {
+    return res.status(400).json({ errorMessage: "Invalid user ID" });
+  }
+
+  try {
+    const user = await User.findByIdAndDelete(id);
+
+    if (!user) {
+      return res.status(404).json({ errorMessage: 'User not found' });
+    }
+
+    res.status(200).json({ message: 'User deleted successfully' });
+  } catch (error) {
+    // Log error and send a more generic error message
+    console.error(error);
+    res.status(500).json({ errorMessage: 'Internal Server Error' });
+  }
+});
+
 
 
 module.exports = router;
