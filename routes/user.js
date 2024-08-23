@@ -231,7 +231,7 @@ router.post('/admin-login', async (req, res, next) => {
     const user = await User.findOne({ matric }).populate('authentication');
 
     if (user && user.role !== 'admin') {
-      return res.status(404).json({ message: 'You Need to be an Admin to login' });
+      return res.status(404).json({ message: 'You need to be an admin to login' });
     }
 
     if (!user) {
