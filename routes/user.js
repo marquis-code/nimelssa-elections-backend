@@ -204,8 +204,6 @@ router.put('/users/:id/approve-matric', adminAuthenticateToken, async (req, res)
 
 router.post('/batch-approve-matric', async (req, res) => {
   const matricNumbers = req.body.matricNumbers;
-  console.log(matricNumbers, 'matric numbers here')
-
   if (!Array.isArray(matricNumbers) || matricNumbers.length === 0) {
     return res.status(400).json({ errorMessage: 'No matric numbers provided or invalid input format' });
   }
@@ -242,14 +240,12 @@ router.post('/batch-approve-matric', async (req, res) => {
       }))
     });
   } catch (error) {
-    console.error(error); // Log the error for debugging purposes
     res.status(500).json({ errorMessage: 'Something went wrong. Please try again.' });
   }
 });
 
 router.post('/batch-disapprove-matric', async (req, res) => {
   const matricNumbers = req.body.matricNumbers;
-  console.log(matricNumbers, 'matric numbers here')
 
   if (!Array.isArray(matricNumbers) || matricNumbers.length === 0) {
     return res.status(400).json({ errorMessage: 'No matric numbers provided or invalid input format' });
@@ -287,7 +283,6 @@ router.post('/batch-disapprove-matric', async (req, res) => {
       }))
     });
   } catch (error) {
-    console.error(error); // Log the error for debugging purposes
     res.status(500).json({ errorMessage: 'Something went wrong. Please try again.' });
   }
 });
@@ -402,8 +397,6 @@ router.patch('/user/:id', adminAuthenticateToken, async (req, res) => {
 
     res.status(200).json(user);
   } catch (error) {
-    // Log error and send a more generic error message
-    console.error(error);
     res.status(500).json({ errorMessage: 'Internal Server Error' });
   }
 });
@@ -427,8 +420,6 @@ router.delete('/user/:id', adminAuthenticateToken, async (req, res) => {
 
     res.status(200).json({ message: 'User deleted successfully' });
   } catch (error) {
-    // Log error and send a more generic error message
-    console.error(error);
     res.status(500).json({ errorMessage: 'Internal Server Error' });
   }
 });

@@ -1,6 +1,6 @@
 const express = require('express');
 const Vote = require('../model/vote');
-const { User } = require('../model/user'); 
+const { User, getUserById } = require('../model/user'); 
 const mongoose = require('mongoose');
 const Candidate = require('../model/candidate');
 const userAuthenticateToken = require('../middlewares/userAuth');
@@ -12,8 +12,13 @@ router.post('/submitVote', userAuthenticateToken, async (req, res) => {
   const { votes } = req.body;
 
   try {
-    console.log(req.user.id, 'here')
     // Check if the user has already voted (this is redundant but good to double-check)
+    const existingUser = await getUserById(req.user.id)
+   
+    if (!existingUser) {
+      return res.status(400).json({ error: 'User does not exist' });
+    }
+
     const existingVote = await Vote.findOne({ userId: req.user.id });
     if (existingVote) {
       return res.status(400).json({ error: 'You have already voted from this account' });
@@ -50,6 +55,7 @@ router.post('/submitVote', userAuthenticateToken, async (req, res) => {
     // Create the new vote document with filtered votes
     const newVote = new Vote({
       userId: req.user.id, // Assuming req.user is populated by userAuthenticateToken middleware
+      matricNumber: existingUser.matric, // Ensure this is not null
       ...filteredVotes
     });
 
@@ -57,16 +63,14 @@ router.post('/submitVote', userAuthenticateToken, async (req, res) => {
     return res.status(201).json({ message: 'Thanks for voting. Your vote was submitted successfully.' });
   } catch (err) {
     if (err.code === 11000) {
-      // Handle duplicate key error (code 11000 is MongoDB's duplicate key error code)
       return res.status(400).json({ error: 'You have already voted from this account' });
     }
-    console.log(err);
     return res.status(400).json({ error: 'Error submitting vote', details: err.message || err });
   }
 });
 
 
-router.get('/election-results', adminAuthenticateToken, async (req, res) => {
+router.get('/election-results', async (req, res) => {
   try {
     // Get the total number of users with isMatricApproved = true
     const totalVoters = await User.countDocuments({ isMatricApproved: true });
