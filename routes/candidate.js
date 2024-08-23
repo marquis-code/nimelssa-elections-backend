@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const Candidate = require('../model/candidate');
 const upload = require('../utils/multer')
 const adminAuthenticateToken = require('../middlewares/adminAuth');
+const userAuthenticateToken = require('../middlewares/userAuth')
 
 const router = express.Router();
 
@@ -63,6 +64,39 @@ router.get('/all-candidates', async (req, res) => {
     res.status(500).send(error);
   }
 });
+
+router.get('/level-candidates', userAuthenticateToken, async (req, res) => {
+  try {
+    const userLevel = parseInt(req.query.level); // Retrieve the user's level from the query parameter
+
+    if (isNaN(userLevel)) {
+      return res.status(400).send({ errorMessage: 'Invalid level parameter' });
+    }
+
+    // Find all candidates whose position does not start with 'SENATE'
+    const nonSenateCandidates = await Candidate.find({
+      position: { $not: { $regex: '^SENATE', $options: 'i' } }
+    });
+
+    console.log(nonSenateCandidates, 'non senate');
+
+    // Find the SENATE candidates unique to the user's level
+    const senateCandidates = await Candidate.find({
+      position: `SENATE_${String(userLevel)}`
+    });
+
+    console.log(senateCandidates, 'senate candidates');
+
+    // Combine both results
+    const candidates = [...nonSenateCandidates, ...senateCandidates];
+
+    res.status(200).send(candidates);
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+
 
 // Read a single candidate by ID
 router.get('/candidates/:id', async (req, res) => {

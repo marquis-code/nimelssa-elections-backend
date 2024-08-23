@@ -80,7 +80,8 @@ router.post('/login', async (req, res, next) => {
     const maxAge = 3 * 24 * 60 * 60;
     const payload = {
       id: user._id,
-      role: user.role
+      role: user.role,
+      
     };
 
     const accessToken = jwt.sign(payload, process.env.JWT_SECRET, {
