@@ -81,29 +81,37 @@ router.post('/login', async (req, res, next) => {
     const payload = {
       id: user._id,
       role: user.role,
-      
     };
 
     const accessToken = jwt.sign(payload, process.env.JWT_SECRET, {
-      expiresIn: maxAge
+      expiresIn: maxAge,
     });
 
     user.authentication.sessionToken = accessToken;
     await user.save();
+
+    // Convert the user document to a plain object
+    const userObj = user.toObject();
+
+    // Remove the password field from the authentication object
+    if (userObj.authentication) {
+      delete userObj.authentication.password;
+    }
 
     res.cookie('ELECTION_AUTH_TOKEN', accessToken, {
       path: '/',
       maxAge: maxAge * 1000,
       httpOnly: true,
       sameSite: 'strict',
-      secure: process.env.NODE_ENV !== 'development'
+      secure: process.env.NODE_ENV !== 'development',
     });
 
-    return res.status(200).json({ user, token: accessToken });
+    return res.status(200).json({ user: userObj, token: accessToken });
   } catch (error) {
     return res.status(500).json({ errorMessage: 'Something went wrong' });
   }
 });
+
 
 router.post('/forgot-password', async (req, res) => {
   try {

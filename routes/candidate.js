@@ -78,14 +78,10 @@ router.get('/level-candidates', userAuthenticateToken, async (req, res) => {
       position: { $not: { $regex: '^SENATE', $options: 'i' } }
     });
 
-    console.log(nonSenateCandidates, 'non senate');
-
     // Find the SENATE candidates unique to the user's level
     const senateCandidates = await Candidate.find({
       position: `SENATE_${String(userLevel)}`
     });
-
-    console.log(senateCandidates, 'senate candidates');
 
     // Combine both results
     const candidates = [...nonSenateCandidates, ...senateCandidates];
