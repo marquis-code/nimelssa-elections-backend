@@ -258,6 +258,14 @@ router.post('/admin-login', async (req, res, next) => {
     user.authentication.sessionToken = accessToken;
     await user.save();
 
+       // Convert the user document to a plain object
+       const userObj = user.toObject();
+
+       // Remove the password field from the authentication object
+       if (userObj.authentication) {
+         delete userObj.authentication.password;
+       }
+
     return res.status(200).json({ user, token: accessToken });
   } catch (error) {
     return res.status(500).json({ errorMessage: 'Something went wrong' });
