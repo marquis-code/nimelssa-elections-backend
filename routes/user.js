@@ -48,6 +48,8 @@ router.post('/register', async (req, res, next) => {
 
     const newUser = await createUser(userPayload);
 
+    const returnData = {...userPayload, }
+
     return res.status(200).json({ successMessage: 'User was successfully created', user: newUser });
   } catch (error) {
     return res.status(500).json({ errorMessage: 'Something went wrong' });

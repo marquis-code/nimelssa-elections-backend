@@ -70,47 +70,247 @@ router.post('/submitVote', userAuthenticateToken, async (req, res) => {
 });
 
 
+// router.get('/election-results', async (req, res) => {
+//   try {
+//     // Get the total number of users with isMatricApproved = true
+//     const totalVoters = await User.countDocuments({ isMatricApproved: true });
+
+//     // Fetch all the votes
+//     const votes = await Vote.find().populate('userId');
+
+//     const results = {};
+
+//     // Initialize the results structure
+//     votes.forEach(vote => {
+//       for (const position in vote.toObject()) {
+//         if (position !== '_id' && position !== 'userId' && position !== 'createdAt') {
+//           if (!results[position]) {
+//             results[position] = {};
+//           }
+
+//           if (Array.isArray(vote[position])) {
+//             // For senate positions (arrays)
+//             vote[position].forEach(candidateId => {
+//               if (!results[position][candidateId]) {
+//                 results[position][candidateId] = {
+//                   count: 0,
+//                   voters: []
+//                 };
+//               }
+//               results[position][candidateId].count += 1;
+//               results[position][candidateId].voters.push(vote.userId._id);
+//             });
+//           } else {
+//             // For other positions (single selections)
+//             if (vote[position]) {
+//               if (!results[position][vote[position]]) {
+//                 results[position][vote[position]] = {
+//                   count: 0,
+//                   voters: []
+//                 };
+//               }
+//               results[position][vote[position]].count += 1;
+//               results[position][vote[position]].voters.push(vote.userId._id);
+//             }
+//           }
+//         }
+//       }
+//     });
+
+//     // Determine the winner for each position and calculate the percentage of votes
+//     const winners = {};
+    
+//     for (const position in results) {
+//       let maxVotes = 0;
+//       let winner = null;
+
+//       for (const candidate in results[position]) {
+//         const candidateVotes = results[position][candidate].count;
+//         const percentage = (candidateVotes / totalVoters) * 100; // Calculate based on total approved users
+
+//         // Determine if the candidate wins by at least 75% of the total approved users
+//         if (percentage >= 75) {
+//           winners[position] = {
+//             candidate: candidate,
+//             votes: candidateVotes,
+//             percentage: percentage.toFixed(2),
+//             status: 'Winner'
+//           };
+//         } else {
+//           // Track the candidate with the maximum votes
+//           if (candidateVotes > maxVotes) {
+//             maxVotes = candidateVotes;
+//             winner = candidate;
+//           }
+//         }
+//       }
+
+//       // If no candidate wins by 75%, determine the one with the most votes
+//       if (!winners[position] && winner) {
+//         winners[position] = {
+//           candidate: winner,
+//           votes: maxVotes,
+//           percentage: ((maxVotes / totalVoters) * 100).toFixed(2), // Percentage based on total approved users
+//           status: 'Not Enough Votes to Win'
+//         };
+//       }
+//     }
+
+//     return res.status(200).json({ winners, results });
+//   } catch (err) {
+//     return res.status(400).json({ error: 'Error calculating results', details: err });
+//   }
+// });
+
+// router.get('/election-results', async (req, res) => {
+//   try {
+//     // Get the total number of users with isMatricApproved = true
+//     const totalVoters = await User.countDocuments({ isMatricApproved: true });
+
+//     // Fetch all the votes
+//     const votes = await Vote.find().populate('userId');
+
+//     const results = {};
+
+//     // Initialize the results structure
+//     votes.forEach(vote => {
+//       for (const position in vote.toObject()) {
+//         if (position !== '_id' && position !== 'userId' && position !== 'createdAt') {
+//           if (!results[position]) {
+//             results[position] = {};
+//           }
+
+//           if (Array.isArray(vote[position])) {
+//             // For senate positions (arrays)
+//             vote[position].forEach(candidateId => {
+//               if (!results[position][candidateId]) {
+//                 results[position][candidateId] = {
+//                   count: 0,
+//                   voters: []
+//                 };
+//               }
+//               results[position][candidateId].count += 1;
+//               results[position][candidateId].voters.push(vote.userId._id);
+//             });
+//           } else {
+//             // For other positions (single selections)
+//             if (vote[position]) {
+//               if (!results[position][vote[position]]) {
+//                 results[position][vote[position]] = {
+//                   count: 0,
+//                   voters: []
+//                 };
+//               }
+//               results[position][vote[position]].count += 1;
+//               results[position][vote[position]].voters.push(vote.userId._id);
+//             }
+//           }
+//         }
+//       }
+//     });
+
+//     // Determine the winner for each position and calculate the percentage of votes
+//     const winners = {};
+
+//     for (const position in results) {
+//       let maxVotes = 0;
+//       let winner = null;
+//       let positionResults = [];
+
+//       for (const candidate in results[position]) {
+//         const candidateVotes = results[position][candidate].count;
+//         const percentage = (candidateVotes / totalVoters) * 100; // Calculate based on total approved users
+
+//         // Track all candidates' results
+//         positionResults.push({
+//           candidateId: candidate,
+//           votes: candidateVotes,
+//           percentage: percentage.toFixed(2),
+//           status: percentage >= 75 ? 'Winner' : 'Not Enough Votes to Win'
+//         });
+
+//         // Track the candidate with the maximum votes
+//         if (candidateVotes > maxVotes) {
+//           maxVotes = candidateVotes;
+//           winner = candidate;
+//         }
+//       }
+
+//       // Sort candidates by votes in descending order
+//       positionResults.sort((a, b) => b.votes - a.votes);
+
+//       // If no candidate wins by 75%, assign the one with the most votes as the winner
+//       if (!positionResults.some(candidate => candidate.status === 'Winner') && winner) {
+//         positionResults[0].status = 'Winner';
+//       }
+
+//       winners[position] = positionResults;
+//     }
+
+//     return res.status(200).json({ winners, results });
+//   } catch (err) {
+//     return res.status(400).json({ error: 'Error calculating results', details: err });
+//   }
+// });
+
 router.get('/election-results', async (req, res) => {
   try {
     // Get the total number of users with isMatricApproved = true
     const totalVoters = await User.countDocuments({ isMatricApproved: true });
 
-    // Fetch all the votes
-    const votes = await Vote.find().populate('userId');
+    // Fetch all the votes and populate candidate details
+    const votes = await Vote.find()
+      .populate('userId')
+      .populate('president')
+      .populate('vice_president')
+      .populate('academic_secretary')
+      .populate('general_secretary')
+      .populate('assistant_general_secretary')
+      .populate('financial_secretary')
+      .populate('treasurer')
+      .populate('public_relations_officer')
+      .populate('social_secretary')
+      .populate('sport_secretary')
+      .populate('senate_200')
+      .populate('senate_300')
+      .populate('senate_400')
+      .populate('senate_500');
 
     const results = {};
 
     // Initialize the results structure
     votes.forEach(vote => {
       for (const position in vote.toObject()) {
-        if (position !== '_id' && position !== 'userId' && position !== 'createdAt') {
+        if (position !== '_id' && position !== 'userId' && position !== 'createdAt' && vote[position]) {
           if (!results[position]) {
             results[position] = {};
           }
 
           if (Array.isArray(vote[position])) {
             // For senate positions (arrays)
-            vote[position].forEach(candidateId => {
-              if (!results[position][candidateId]) {
-                results[position][candidateId] = {
+            vote[position].forEach(candidateObj => {
+              if (!results[position][candidateObj._id]) {
+                results[position][candidateObj._id] = {
+                  candidate: candidateObj,
                   count: 0,
                   voters: []
                 };
               }
-              results[position][candidateId].count += 1;
-              results[position][candidateId].voters.push(vote.userId._id);
+              results[position][candidateObj._id].count += 1;
+              results[position][candidateObj._id].voters.push(vote.userId._id);
             });
           } else {
             // For other positions (single selections)
             if (vote[position]) {
-              if (!results[position][vote[position]]) {
-                results[position][vote[position]] = {
+              if (!results[position][vote[position]._id]) {
+                results[position][vote[position]._id] = {
+                  candidate: vote[position],
                   count: 0,
                   voters: []
                 };
               }
-              results[position][vote[position]].count += 1;
-              results[position][vote[position]].voters.push(vote.userId._id);
+              results[position][vote[position]._id].count += 1;
+              results[position][vote[position]._id].voters.push(vote.userId._id);
             }
           }
         }
@@ -119,48 +319,49 @@ router.get('/election-results', async (req, res) => {
 
     // Determine the winner for each position and calculate the percentage of votes
     const winners = {};
-    
+
     for (const position in results) {
       let maxVotes = 0;
       let winner = null;
+      let positionResults = [];
 
-      for (const candidate in results[position]) {
-        const candidateVotes = results[position][candidate].count;
+      for (const candidateId in results[position]) {
+        const candidateVotes = results[position][candidateId].count;
         const percentage = (candidateVotes / totalVoters) * 100; // Calculate based on total approved users
 
-        // Determine if the candidate wins by at least 75% of the total approved users
-        if (percentage >= 75) {
-          winners[position] = {
-            candidate: candidate,
-            votes: candidateVotes,
-            percentage: percentage.toFixed(2),
-            status: 'Winner'
-          };
-        } else {
-          // Track the candidate with the maximum votes
-          if (candidateVotes > maxVotes) {
-            maxVotes = candidateVotes;
-            winner = candidate;
-          }
+        // Track all candidates' results
+        positionResults.push({
+          candidate: results[position][candidateId].candidate,
+          votes: candidateVotes,
+          percentage: percentage.toFixed(2),
+          status: percentage >= 75 ? 'Winner' : 'Not Enough Votes to Win'
+        });
+
+        // Track the candidate with the maximum votes
+        if (candidateVotes > maxVotes) {
+          maxVotes = candidateVotes;
+          winner = candidateId;
         }
       }
 
-      // If no candidate wins by 75%, determine the one with the most votes
-      if (!winners[position] && winner) {
-        winners[position] = {
-          candidate: winner,
-          votes: maxVotes,
-          percentage: ((maxVotes / totalVoters) * 100).toFixed(2), // Percentage based on total approved users
-          status: 'Not Enough Votes to Win'
-        };
+      // Sort candidates by votes in descending order
+      positionResults.sort((a, b) => b.votes - a.votes);
+
+      // If no candidate wins by 75%, assign the one with the most votes as the winner
+      if (!positionResults.some(candidate => candidate.status === 'Winner') && winner) {
+        positionResults[0].status = 'Winner';
       }
+
+      winners[position] = positionResults;
     }
 
     return res.status(200).json({ winners, results });
   } catch (err) {
-    return res.status(400).json({ error: 'Error calculating results', details: err });
+    return res.status(400).json({ error: 'Error calculating results', details: err.message });
   }
 });
+
+
 
 
 
