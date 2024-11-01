@@ -89,6 +89,7 @@ router.get('/election-results', async (req, res) => {
       .populate('treasurer')
       .populate('public_relations_officer')
       .populate('social_secretary')
+      .populate('welfare_secretary')
       .populate('sport_secretary')
       .populate('senate_200')
       .populate('senate_300')
@@ -220,6 +221,7 @@ router.get('/votes-by-level', async (req, res) => {
                           public_relations_officer: '$public_relations_officer',
                           social_secretary: '$social_secretary',
                           sport_secretary: '$sport_secretary',
+                          welfare_secretary: '$welfare_secretary',
                           senate_200: '$senate_200',
                           senate_300: '$senate_300',
                           senate_400: '$senate_400',
