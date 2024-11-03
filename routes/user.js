@@ -426,6 +426,85 @@ router.delete('/user/:id', adminAuthenticateToken, async (req, res) => {
   }
 });
 
+// POST endpoint to update academic level based on matric numbers
+router.post('/update-academic-level', async (req, res) => {
+  const { matricNumbers, level } = req.body;
+
+  // Validate input
+  if (!Array.isArray(matricNumbers) || typeof level !== 'string') {
+    return res.status(400).json({ errorMessage: 'Invalid input format.' });
+  }
+
+  // Restrict accepted levels
+  const acceptedLevels = ["100", "200", "300", "400", "500"];
+  if (!acceptedLevels.includes(level)) {
+    return res.status(400).json({ errorMessage: `Invalid academic level. Accepted levels are: ${acceptedLevels.join(", ")}.` });
+  }
+
+  try {
+    // Find students with provided matric numbers
+    const students = await User.find({ matric: { $in: matricNumbers } });
+
+    // Separate valid and invalid matric numbers
+    const foundMatricNumbers = students.map(student => student.matric);
+    const invalidMatricNumbers = matricNumbers.filter(matric => !foundMatricNumbers.includes(matric));
+
+    if (foundMatricNumbers.length === 0) {
+      return res.status(404).json({ errorMessage: 'No students found with the given matric numbers.' });
+    }
+
+    // Update academic level for matched students
+    const updatedStudents = await User.updateMany(
+      { matric: { $in: foundMatricNumbers } },
+      { $set: { level: level } }
+    );
+
+    res.status(200).json({
+      successMessage: `Successfully updated academic level for ${updatedStudents.modifiedCount} students.`,
+      updatedMatricNumbers: foundMatricNumbers,
+      invalidMatricNumbers: invalidMatricNumbers,
+    });
+  } catch (error) {
+    res.status(500).json({ errorMessage: 'Error updating academic level.', details: error.message });
+  }
+});
+
+
+
+
+router.post('/batch-delete-users', async (req, res) => {
+  const { matricNumbers } = req.body;
+
+  // Validate input
+  if (!Array.isArray(matricNumbers)) {
+    return res.status(400).json({ errorMessage: 'Invalid input format.' });
+  }
+
+  try {
+    // Find students with provided matric numbers
+    const students = await User.find({ matric: { $in: matricNumbers } });
+
+    // Separate valid and invalid matric numbers
+    const foundMatricNumbers = students.map(student => student.matric);
+    const invalidMatricNumbers = matricNumbers.filter(matric => !foundMatricNumbers.includes(matric));
+
+    if (foundMatricNumbers.length === 0) {
+      return res.status(404).json({ errorMessage: 'No students found with the given matric numbers.' });
+    }
+
+    // Delete matched students
+    const deletedStudents = await User.deleteMany({ matric: { $in: foundMatricNumbers } });
+
+    res.status(200).json({
+      successMessage: `Successfully deleted ${deletedStudents.deletedCount} students.`,
+      deletedMatricNumbers: foundMatricNumbers,
+      invalidMatricNumbers: invalidMatricNumbers,
+    });
+  } catch (error) {
+    res.status(500).json({ errorMessage: 'Error deleting users.', details: error.message });
+  }
+});
+
 
 
 module.exports = router;
