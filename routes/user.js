@@ -15,7 +15,7 @@ const generateOTP = () => {
 
 const router = express.Router();
 
-const allowedMatricNumbers = ["180708004", "210708040", "190704023"];
+const allowedMatricNumbers = ["160708004", "210708040", "190704023"];
 
 router.post('/register', async (req, res, next) => {
   try {
