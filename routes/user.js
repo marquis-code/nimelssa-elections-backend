@@ -15,7 +15,7 @@ const generateOTP = () => {
 
 const router = express.Router();
 
-const allowedMatricNumbers = ["190708015", "180708004", "160708004", "230708544", "210708040", "190704023", "180708043"];
+const allowedMatricNumbers = ["160708004", "210708040", "190704023"];
 
 router.post('/register', async (req, res, next) => {
   try {
@@ -502,6 +502,158 @@ router.post('/batch-delete-users', async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ errorMessage: 'Error deleting users.', details: error.message });
+  }
+});
+
+
+// POST endpoint to allow a student to update their own academic level once
+router.post('/update-my-level', authenticateToken, async (req, res) => {
+  const { level } = req.body;
+  const userId = req.user.id; // user extracted from JWT in authenticateToken middleware
+
+  const acceptedLevels = ["100", "200", "300", "400", "500"];
+
+  if (!level || !acceptedLevels.includes(level)) {
+    return res.status(400).json({
+      errorMessage: `Invalid or missing level. Accepted levels are: ${acceptedLevels.join(", ")}.`
+    });
+  }
+
+  try {
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ errorMessage: "User not found." });
+    }
+
+    if (user.hasUpdatedLevel) {
+      return res.status(403).json({ errorMessage: "You have already updated your academic level once. Further updates are not allowed." });
+    }
+
+    // Update academic level and flag
+    user.level = level;
+    user.hasUpdatedLevel = true;
+    await user.save();
+
+    res.status(200).json({
+      successMessage: `Academic level successfully updated to ${level}.`,
+      updatedUser: {
+        matric: user.matric,
+        level: user.level,
+        hasUpdatedLevel: user.hasUpdatedLevel
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ errorMessage: "Server error. Could not update academic level.", details: error.message });
+  }
+});
+
+
+router.post('/admin/reset-level-update', adminAuthenticateToken, async (req, res) => {
+  const { matric } = req.body;
+
+  if (!matric) {
+    return res.status(400).json({ errorMessage: 'Matric number is required.' });
+  }
+
+  try {
+    const user = await User.findOne({ matric });
+    if (!user) {
+      return res.status(404).json({ errorMessage: 'User not found.' });
+    }
+
+    user.hasUpdatedLevel = false;
+    await user.save();
+
+    res.status(200).json({
+      successMessage: `Reset level update permission for ${matric}.`,
+    });
+  } catch (error) {
+    res.status(500).json({ errorMessage: 'Internal Server Error', details: error.message });
+  }
+});
+
+
+router.post('/login', async (req, res, next) => {
+  try {
+    const { matric, password } = req.body;
+
+    // Validate input
+    if (!matric || !password) {
+      return res.status(400).json({ errorMessage: 'Incomplete request data' });
+    }
+
+    // Find user by matric
+    const user = await User.findOne({ matric }).select('+authentication.password');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Check matric approval
+    if (!user.isMatricApproved) {
+      return res.status(403).json({
+        message: 'Matric Number not approved. Contact Academic team to get your matric approved.'
+      });
+    }
+
+    // ✅ Check if user has updated their academic level
+    if (!user.hasUpdatedLevel) {
+      return res.status(403).json({
+        message: 'You must update your academic level before logging in.'
+      });
+    }
+
+    // Compare passwords
+    const passwordMatch = await bcrypt.compare(password, user.authentication.password);
+    if (!passwordMatch) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    // Create JWT token
+    const maxAge = 3 * 24 * 60 * 60; // 3 days
+    const payload = {
+      id: user._id,
+      role: user.role,
+    };
+
+    const accessToken = jwt.sign(payload, process.env.JWT_SECRET, {
+      expiresIn: maxAge,
+    });
+
+    // Save token in database
+    user.authentication.sessionToken = accessToken;
+    await user.save();
+
+    // Convert to plain object for response
+    const userObj = user.toObject();
+
+    // Remove sensitive fields
+    if (userObj.authentication) {
+      delete userObj.authentication.password;
+    }
+
+    // Send cookie
+    res.cookie('ELECTION_AUTH_TOKEN', accessToken, {
+      path: '/',
+      maxAge: maxAge * 1000,
+      httpOnly: true,
+      sameSite: 'strict',
+      secure: process.env.NODE_ENV !== 'development',
+    });
+
+    // Success response
+    return res.status(200).json({
+      successMessage: 'Login successful',
+      user: userObj,
+      token: accessToken,
+    });
+
+  } catch (error) {
+    console.error('Login Error:', error.message);
+    return res.status(500).json({
+      errorMessage: 'Something went wrong while logging in',
+      details: error.message
+    });
   }
 });
 

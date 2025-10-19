@@ -11,7 +11,7 @@ const router = express.Router();
 const allowedPositions = [
   'PRESIDENT', 'VICE_PRESIDENT', 'ACADEMIC_SECRETARY', 'GENERAL_SECRETARY', 
   'ASSISTANT_GENERAL_SECRETARY', 'FINANCIAL_SECRETARY', 'TREASURER', 
-  'PUBLIC_RELATIONS_OFFICER', 'SOCIAL_SECRETARY', 'WELFARE_SECRETARY', 'SPORT_SECRETARY', 
+  'PUBLIC_RELATIONS_OFFICER', 'SOCIAL_SECRETARY', 'WELFARE_SECRETARY', 'ASSISTANT_WELFARE_SECRETARY', 'SPORT_SECRETARY', 
   'SENATE_200', 'SENATE_300', 'SENATE_400', 'SENATE_500'
 ];
 
@@ -91,7 +91,6 @@ router.get('/level-candidates', userAuthenticateToken, async (req, res) => {
     res.status(500).send(error);
   }
 });
-
 
 
 // Read a single candidate by ID

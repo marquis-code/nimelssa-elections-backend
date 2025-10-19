@@ -14,6 +14,7 @@ const voteSchema = new mongoose.Schema({
   social_secretary: { type: mongoose.Schema.Types.ObjectId, ref: 'Candidate', required: false },
   sport_secretary: { type: mongoose.Schema.Types.ObjectId, ref: 'Candidate', required: false },
   welfare_secretary: { type: mongoose.Schema.Types.ObjectId, ref: 'Candidate', required: false },
+  assistant_welfare_secretary: { type: mongoose.Schema.Types.ObjectId, ref: 'Candidate', required: false },
   senate_200: {
     type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Candidate' }],
     validate: {
