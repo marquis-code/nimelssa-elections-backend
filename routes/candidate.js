@@ -5,6 +5,7 @@ const Candidate = require('../model/candidate');
 const upload = require('../utils/multer')
 const adminAuthenticateToken = require('../middlewares/adminAuth');
 const userAuthenticateToken = require('../middlewares/userAuth')
+const authenticateToken = require('../middlewares/authenticateToken')
 
 const router = express.Router();
 
@@ -56,7 +57,7 @@ router.post('/create', upload.single('image'), async (req, res) => {
 });
 
 // Read all candidates
-router.get('/all-candidates', async (req, res) => {
+router.get('/all-candidates', authenticateToken, async (req, res) => {
   try {
     const candidates = await Candidate.find();
     res.status(200).send(candidates);
