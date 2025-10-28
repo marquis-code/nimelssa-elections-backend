@@ -17,22 +17,75 @@ const router = express.Router();
 
 const allowedMatricNumbers = ["160708004", "210708040", "190704023"];
 
+// router.post('/register', async (req, res, next) => {
+//   try {
+//     const { firstname, lastname, email, matric, password, level, role } = req.body;
+
+//     if (!firstname || !lastname || !email || !matric || !password || !level) {
+//       return res.status(400).json({ errorMessage: 'Incomplete request data' });
+//     }
+
+//     const existingUser = await getUserByEmail(email);
+//     if (existingUser) {
+//       return res.status(400).json({ errorMessage: 'User already exists' });
+//     }
+
+//     const salt = await bcrypt.genSalt();
+//     const hashedPassword = await bcrypt.hash(password, salt);
+
+//     const userPayload = {
+//       firstname,
+//       lastname,
+//       level,
+//       role,
+//       email,
+//       matric,
+//       authentication: {
+//         salt,
+//         password: hashedPassword
+//       }
+//     };
+
+//     const newUser = await createUser(userPayload);
+
+//     const returnData = {...userPayload, }
+
+//     return res.status(200).json({ successMessage: 'User was successfully created', user: newUser });
+//   } catch (error) {
+//     console.log(error, 'error here')
+//     // return res.status(500).json({ errorMessage: 'Something went wrong' });
+//   }
+// });
+
 router.post('/register', async (req, res, next) => {
   try {
-    const { firstname, lastname, email, matric, password, level, role } = req.body;
+    let { firstname, lastname, email, matric, password, level, role } = req.body;
 
+    // Convert all inputs to strings and trim
+    firstname = String(firstname || '').trim();
+    lastname  = String(lastname || '').trim();
+    email     = String(email || '').trim();
+    matric    = String(matric || '').trim();
+    password  = String(password || '').trim();
+    level     = String(level || '').trim();
+    role      = role ? String(role).trim() : 'user';
+
+    // Validate required fields
     if (!firstname || !lastname || !email || !matric || !password || !level) {
       return res.status(400).json({ errorMessage: 'Incomplete request data' });
     }
 
+    // Check existing user
     const existingUser = await getUserByEmail(email);
     if (existingUser) {
       return res.status(400).json({ errorMessage: 'User already exists' });
     }
 
+    // Hash password
     const salt = await bcrypt.genSalt();
     const hashedPassword = await bcrypt.hash(password, salt);
 
+    // Payload
     const userPayload = {
       firstname,
       lastname,
@@ -48,11 +101,13 @@ router.post('/register', async (req, res, next) => {
 
     const newUser = await createUser(userPayload);
 
-    const returnData = {...userPayload, }
-
-    return res.status(200).json({ successMessage: 'User was successfully created', user: newUser });
+    return res.status(200).json({
+      successMessage: 'User was successfully created',
+      user: newUser
+    });
   } catch (error) {
-    return res.status(500).json({ errorMessage: 'Something went wrong' });
+    console.error('Error in /register:', error);
+    return res.status(500).json({ errorMessage: error.message || 'Something went wrong' });
   }
 });
 
